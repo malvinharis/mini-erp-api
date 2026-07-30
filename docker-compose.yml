@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mini_erp
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/mini_erp?schema=public&connection_limit=10&pool_timeout=20
+      JWT_ACCESS_SECRET: change-me-access-secret-min-32-chars-long
+      JWT_REFRESH_SECRET: change-me-refresh-secret-min-32-chars-long
+      CORS_ORIGINS: http://localhost:3000
+    ports:
+      - "4000:4000"
+
+volumes:
+  pgdata:
