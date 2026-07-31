@@ -1,0 +1,67 @@
+name: Deploy API
+
+on:
+  push:
+    branches: [main]
+
+# never run two API deploys at once
+concurrency:
+  group: deploy-api
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          # exported into the remote shell by ssh-action's `envs:` list below
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          JWT_ACCESS_SECRET: ${{ secrets.JWT_ACCESS_SECRET }}
+          JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
+          JWT_ACCESS_TTL: ${{ vars.JWT_ACCESS_TTL }}
+          JWT_REFRESH_TTL: ${{ vars.JWT_REFRESH_TTL }}
+          CORS_ORIGINS: ${{ vars.CORS_ORIGINS }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          port: ${{ secrets.VPS_PORT }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script_stop: true            # fail the job if any command fails
+          envs: DATABASE_URL,DIRECT_URL,JWT_ACCESS_SECRET,JWT_REFRESH_SECRET,JWT_ACCESS_TTL,JWT_REFRESH_TTL,CORS_ORIGINS
+          script: |
+            set -e
+            cd /home/deploy/apps/mini-erp-api
+
+            # 1. pull the exact pushed commit
+            git fetch --all
+            git reset --hard origin/main
+
+            # 2. write .env from GitHub Secrets/Variables — single source of truth,
+            #    no manual nano on the server, rotates just by updating a secret
+            cat > .env <<ENVEOF
+            NODE_ENV=production
+            PORT=4000
+            DATABASE_URL=${DATABASE_URL}
+            DIRECT_URL=${DIRECT_URL}
+            JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
+            JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+            JWT_ACCESS_TTL=${JWT_ACCESS_TTL}
+            JWT_REFRESH_TTL=${JWT_REFRESH_TTL}
+            CORS_ORIGINS=${CORS_ORIGINS}
+            ENVEOF
+            chmod 600 .env
+
+            # 3. rebuild the image (layer cache keeps unchanged deps fast)
+            docker compose -f docker-compose.prod.yml build
+
+            # 4. recreate the container. migrations (prisma migrate deploy) run
+            #    inside the container's CMD on start — no separate step here.
+            docker compose -f docker-compose.prod.yml up -d
+
+            # 5. wait for health, then drop dangling old images
+            sleep 10
+            docker compose -f docker-compose.prod.yml ps
+            docker image prune -f
