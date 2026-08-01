@@ -11,6 +11,13 @@ export const envSchema = z.object({
   JWT_ACCESS_TTL: z.coerce.number().int().positive().default(900),
   JWT_REFRESH_TTL: z.coerce.number().int().positive().default(604800),
   CORS_ORIGINS: z.string().default('http://localhost:3000'),
+  // Microservice topology — each feature service listens on its own port; the
+  // gateway reverse-proxies to them. Defaults let a fresh clone run as-is.
+  GATEWAY_PORT: z.coerce.number().int().positive().default(4000),
+  AUTH_SERVICE_PORT: z.coerce.number().int().positive().default(4001),
+  USERS_SERVICE_PORT: z.coerce.number().int().positive().default(4002),
+  AUTH_SERVICE_URL: z.string().url().default('http://localhost:4001'),
+  USERS_SERVICE_URL: z.string().url().default('http://localhost:4002'),
 });
 
 export type Env = z.infer<typeof envSchema>;
