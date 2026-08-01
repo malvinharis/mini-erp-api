@@ -18,57 +18,33 @@ datasource db {
 enum UserRole {
   ADMIN
   STAFF
-}
-
-enum ExampleStatus {
-  DRAFT
-  ACTIVE
-  ARCHIVED
+  VIEWER
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
+  id        String    @id @default(uuid())
+  email     String    @unique
   name      String
   password  String
-  role      UserRole @default(STAFF)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  role      UserRole  @default(STAFF)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   refreshTokens RefreshToken[]
-  examples      Example[]
 
   @@index([email])
-}
-
-// POLA MODUL — demonstrates conventions: uuid PK, timestamps, Decimal money,
-// soft delete, owner FK for object-level authorization, and composite indexes.
-model Example {
-  id        String        @id @default(uuid())
-  name      String
-  status    ExampleStatus @default(DRAFT)
-  amount    Decimal       @db.Decimal(14, 2) @default(0)
-  ownerId   String
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  deletedAt DateTime?
-
-  owner User @relation(fields: [ownerId], references: [id])
-
-  @@index([ownerId])
-  @@index([status, createdAt])
-  @@index([createdAt])
+  @@index([role, createdAt])
 }
 
 model RefreshToken {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   userId    String
   tokenHash String
   family    String
   expiresAt DateTime
   revokedAt DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

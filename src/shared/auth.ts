@@ -23,7 +23,7 @@ export const tokenPairSchema = z.object({
 });
 export type TokenPair = z.infer<typeof tokenPairSchema>;
 
-export const userRoleSchema = z.enum(['ADMIN', 'STAFF']);
+export const userRoleSchema = z.enum(['ADMIN', 'STAFF', 'VIEWER']);
 export type UserRole = z.infer<typeof userRoleSchema>;
 
 export const authUserSchema = z.object({

@@ -51,17 +51,28 @@ jobs:
             JWT_ACCESS_TTL=${JWT_ACCESS_TTL}
             JWT_REFRESH_TTL=${JWT_REFRESH_TTL}
             CORS_ORIGINS=${CORS_ORIGINS}
+            GATEWAY_PORT=4000
+            AUTH_SERVICE_PORT=4001
+            USERS_SERVICE_PORT=4002
+            AUTH_SERVICE_URL=http://auth:4001
+            USERS_SERVICE_URL=http://users:4002
             ENVEOF
             chmod 600 .env
 
-            # 3. rebuild the image (layer cache keeps unchanged deps fast)
+            # 3. rebuild the image (one build; auth/users reuse the tag)
             docker compose -f docker-compose.prod.yml build
 
-            # 4. recreate the container. migrations (prisma migrate deploy) run
-            #    inside the container's CMD on start — no separate step here.
+            # 4. run migrations ONCE, before services boot. Use DIRECT_URL — a
+            #    transaction-mode pooler can't hold the migrate advisory lock,
+            #    and three services each migrating would race it.
+            docker compose -f docker-compose.prod.yml run --rm \
+              -e DATABASE_URL="${DIRECT_URL}" \
+              gateway node_modules/.bin/prisma migrate deploy
+
+            # 5. recreate all three services (gateway waits for auth/users health)
             docker compose -f docker-compose.prod.yml up -d
 
-            # 5. wait for health, then drop dangling old images
-            sleep 10
+            # 6. wait for health, then drop dangling old images
+            sleep 15
             docker compose -f docker-compose.prod.yml ps
             docker image prune -f

@@ -1,19 +1,49 @@
-# Production compose — API only. External managed Postgres (no local db service).
-# Port bound to loopback: only the host's Nginx reaches it, never the internet.
+# Production compose — microservices. External managed Postgres (no local db).
+# Only the gateway is published (loopback); Nginx reaches it, internet can't.
+# auth/users stay on the internal network. One image, three commands.
+# Migrations run once as a separate step in the deploy workflow (not per service).
 services:
-  api:
+  gateway:
     build:
       context: .
       dockerfile: Dockerfile
     image: mini-erp-api:latest
-    container_name: mini-erp-api
+    container_name: mini-erp-gateway
     restart: unless-stopped
     env_file: .env
+    command: ["node", "dist/services/gateway/main.js"]
+    depends_on:
+      auth:
+        condition: service_healthy
+      users:
+        condition: service_healthy
     ports:
       - "127.0.0.1:4000:4000"
+    networks: [mini-erp-net]
     healthcheck:
-      # node 22 has global fetch — no curl needed in the image
-      test: ["CMD", "node", "-e", "fetch('http://localhost:4000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      test: ["CMD", "node", "-e", "fetch('http://localhost:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  auth:
+    image: mini-erp-api:latest          # reuse the gateway's build, no rebuild
+    container_name: mini-erp-auth
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      AUTH_SERVICE_PORT: "4001"
+    command: ["node", "dist/services/auth/main.js"]
+    expose: ["4001"]                    # internal only — NOT ports:
+    networks: [mini-erp-net]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:4001/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -23,3 +53,29 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  users:
+    image: mini-erp-api:latest
+    container_name: mini-erp-users
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      USERS_SERVICE_PORT: "4002"
+    command: ["node", "dist/services/users/main.js"]
+    expose: ["4002"]
+    networks: [mini-erp-net]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:4002/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  mini-erp-net:
+    driver: bridge
