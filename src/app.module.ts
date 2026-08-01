@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { CoreModule } from './core.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { CustomersModule } from './modules/customers/customers.module';
 import { HealthModule } from './modules/health/health.module';
 import { UsersModule } from './modules/users/users.module';
 
@@ -11,6 +12,6 @@ import { UsersModule } from './modules/users/users.module';
  * services; the modules are unchanged.
  */
 @Module({
-  imports: [CoreModule, AuthModule, UsersModule, HealthModule],
+  imports: [CoreModule, AuthModule, UsersModule, CustomersModule, HealthModule],
 })
 export class AppModule {}
