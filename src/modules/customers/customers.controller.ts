@@ -12,9 +12,11 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 // biome-ignore lint/style/useImportType: NestJS DI needs a runtime import for emitDecoratorMetadata
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import type { AuthUser } from '../../shared';
 // biome-ignore lint/style/useImportType: NestJS DI needs a runtime import for emitDecoratorMetadata
 import { CustomersService } from './customers.service';
 // biome-ignore lint/style/useImportType: NestJS DI needs a runtime import for emitDecoratorMetadata
@@ -42,14 +44,18 @@ export class CustomersController {
 
   @Post()
   @Roles('ADMIN', 'STAFF')
-  create(@Body() dto: CreateCustomerDto) {
-    return this.service.create(dto);
+  create(@CurrentUser() user: AuthUser, @Body() dto: CreateCustomerDto) {
+    return this.service.create(user.id, dto);
   }
 
   @Patch(':id')
   @Roles('ADMIN', 'STAFF')
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateCustomerDto) {
-    return this.service.update(id, dto);
+  update(
+    @CurrentUser() user: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateCustomerDto,
+  ) {
+    return this.service.update(user.id, id, dto);
   }
 
   @Delete(':id')

@@ -39,10 +39,14 @@ export class InvoicesService {
     total: true,
     createdAt: true,
     customer: { select: { id: true, name: true, email: true } },
+    createdBy: { select: { id: true, name: true } },
+    updatedBy: { select: { id: true, name: true } },
   } satisfies Prisma.InvoiceSelect;
 
   private readonly detailInclude = {
     customer: { select: { id: true, name: true, email: true, address: true } },
+    createdBy: { select: { id: true, name: true } },
+    updatedBy: { select: { id: true, name: true } },
     items: {
       select: { id: true, description: true, quantity: true, unitPrice: true, amount: true },
     },
@@ -124,7 +128,7 @@ export class InvoicesService {
     return serializeInvoice(invoice);
   }
 
-  async update(_user: AuthUser, id: string, input: UpdateInvoiceInput) {
+  async update(user: AuthUser, id: string, input: UpdateInvoiceInput) {
     const existing = await this.getById(id);
     if (existing.status !== 'DRAFT') {
       throw new BadRequestException('Only DRAFT invoices can be edited');
@@ -147,6 +151,7 @@ export class InvoicesService {
           subtotal: totals.subtotal,
           taxAmount: totals.taxAmount,
           total: totals.total,
+          updatedById: user.id,
           items: { create: totals.items },
         },
         include: this.detailInclude,
@@ -172,7 +177,7 @@ export class InvoicesService {
       });
       return tx.invoice.update({
         where: { id },
-        data: { status: to },
+        data: { status: to, updatedById: user.id },
         include: this.detailInclude,
       });
     });
@@ -191,6 +196,8 @@ export class InvoicesService {
 type DetailInvoice = Prisma.InvoiceGetPayload<{
   include: {
     customer: { select: { id: true; name: true; email: true; address: true } };
+    createdBy: { select: { id: true; name: true } };
+    updatedBy: { select: { id: true; name: true } };
     items: {
       select: { id: true; description: true; quantity: true; unitPrice: true; amount: true };
     };
