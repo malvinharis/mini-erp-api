@@ -1,4 +1,4 @@
-import { PrismaClient, type UserRole } from '@prisma/client';
+import { type InvoiceStatus, PrismaClient, type UserRole } from '@prisma/client';
 import * as argon2 from 'argon2';
 
 const prisma = new PrismaClient();
@@ -23,6 +23,8 @@ async function main(): Promise<void> {
   }
 
   await seedCustomers(55);
+  // ~2 invoices per customer so every customer detail page has data
+  await seedInvoices(110);
 }
 
 /** Generate enough customers to exercise pagination (default limit 20). Idempotent. */
@@ -66,6 +68,86 @@ async function seedCustomers(count: number): Promise<void> {
     });
   }
   console.log(`Seeded ${count} customers`);
+}
+
+/**
+ * Seed invoices across every status for list filters + the dashboard. Numbers use
+ * a 9xxx range so they never collide with app-generated INV-<year>-000x numbers.
+ * Idempotent: keyed on a deterministic id, nested rows created only on insert.
+ */
+async function seedInvoices(count: number): Promise<void> {
+  const admin = await prisma.user.findUnique({ where: { email: 'admin@mini-erp.local' } });
+  if (!admin) throw new Error('admin user must be seeded before invoices');
+
+  const statuses: InvoiceStatus[] = ['DRAFT', 'SENT', 'PAID', 'OVERDUE', 'CANCELLED'];
+  const catalog = [
+    { description: 'Jasa konsultasi', unitPrice: 300000 },
+    { description: 'Lisensi bulanan', unitPrice: 1500000 },
+    { description: 'Biaya implementasi', unitPrice: 750000 },
+    { description: 'Dukungan teknis', unitPrice: 500000 },
+  ];
+
+  for (let i = 1; i <= count; i++) {
+    const id = `10000000-0000-4000-8000-${String(i).padStart(12, '0')}`;
+    const customerId = `00000000-0000-4000-8000-${String((i % 55) + 1).padStart(12, '0')}`;
+    const status = statuses[i % statuses.length];
+    const taxRate = i % 2 === 0 ? 11 : 0;
+
+    // 1–2 line items, deterministic per i
+    const rawItems = [
+      { ...catalog[i % catalog.length], quantity: (i % 5) + 1 },
+      ...(i % 3 === 0 ? [{ ...catalog[(i + 1) % catalog.length], quantity: 1 }] : []),
+    ];
+    const totals = computeTotals(rawItems, taxRate);
+    const issueDate = new Date(2026, 6, ((i * 3) % 28) + 1); // spread across Jul 2026
+    const dueDate = new Date(issueDate.getTime() + 14 * 86_400_000);
+
+    await prisma.invoice.upsert({
+      where: { id },
+      update: {},
+      create: {
+        id,
+        number: `INV-2026-${String(9000 + i)}`,
+        customerId,
+        createdById: admin.id,
+        status,
+        issueDate,
+        dueDate,
+        subtotal: totals.subtotal,
+        taxRate,
+        taxAmount: totals.taxAmount,
+        total: totals.total,
+        items: { create: totals.items },
+        statusLogs: { create: { toStatus: status, changedById: admin.id } },
+      },
+    });
+  }
+  console.log(`Seeded ${count} invoices`);
+}
+
+/** Money math in integer cents; mirrors InvoicesService.computeTotals. */
+function computeTotals(
+  items: Array<{ description: string; quantity: number; unitPrice: number }>,
+  taxRate: number,
+) {
+  const priced = items.map((it) => {
+    const amountCents = it.quantity * Math.round(it.unitPrice * 100);
+    return {
+      description: it.description,
+      quantity: it.quantity,
+      unitPrice: it.unitPrice.toFixed(2),
+      amount: (amountCents / 100).toFixed(2),
+      amountCents,
+    };
+  });
+  const subtotalCents = priced.reduce((sum, it) => sum + it.amountCents, 0);
+  const taxCents = Math.round((subtotalCents * taxRate) / 100);
+  return {
+    items: priced.map(({ amountCents: _drop, ...rest }) => rest),
+    subtotal: (subtotalCents / 100).toFixed(2),
+    taxAmount: (taxCents / 100).toFixed(2),
+    total: ((subtotalCents + taxCents) / 100).toFixed(2),
+  };
 }
 
 main()
