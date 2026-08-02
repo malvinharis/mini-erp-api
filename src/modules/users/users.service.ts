@@ -41,14 +41,17 @@ export class UsersService {
   }
 
   async list(query: PaginationQuery) {
-    const where = query.search
-      ? {
-          OR: [
-            { email: { contains: query.search, mode: 'insensitive' as const } },
-            { name: { contains: query.search, mode: 'insensitive' as const } },
-          ],
-        }
-      : {};
+    const where = {
+      deletedAt: null,
+      ...(query.search
+        ? {
+            OR: [
+              { email: { contains: query.search, mode: 'insensitive' as const } },
+              { name: { contains: query.search, mode: 'insensitive' as const } },
+            ],
+          }
+        : {}),
+    };
     const { skip, take } = toPrismaPage(query);
 
     const [rows, total] = await this.prisma.$transaction([
