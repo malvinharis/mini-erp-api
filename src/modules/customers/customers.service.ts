@@ -21,6 +21,8 @@ export class CustomersService {
     address: true,
     createdAt: true,
     updatedAt: true,
+    createdBy: { select: { id: true, name: true } },
+    updatedBy: { select: { id: true, name: true } },
   } as const;
 
   async list(query: PaginationQuery) {
@@ -60,13 +62,20 @@ export class CustomersService {
     return customer;
   }
 
-  async create(input: CreateCustomerInput) {
-    return this.prisma.customer.create({ data: input, select: this.select });
+  async create(createdById: string, input: CreateCustomerInput) {
+    return this.prisma.customer.create({
+      data: { ...input, createdById },
+      select: this.select,
+    });
   }
 
-  async update(id: string, input: UpdateCustomerInput) {
+  async update(updatedById: string, id: string, input: UpdateCustomerInput) {
     await this.getById(id); // existence + not-deleted check
-    return this.prisma.customer.update({ where: { id }, data: input, select: this.select });
+    return this.prisma.customer.update({
+      where: { id },
+      data: { ...input, updatedById },
+      select: this.select,
+    });
   }
 
   /** Soft delete — keeps the row for invoices that reference it. */

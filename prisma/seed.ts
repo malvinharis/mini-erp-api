@@ -14,10 +14,12 @@ async function main(): Promise<void> {
   ];
 
   for (const u of users) {
+    const password = await hash(u.password);
     await prisma.user.upsert({
       where: { email: u.email },
-      update: {},
-      create: { email: u.email, name: u.name, role: u.role, password: await hash(u.password) },
+      // reset name/role/password and reactivate so re-seeding self-heals drift
+      update: { name: u.name, role: u.role, password, deletedAt: null },
+      create: { email: u.email, name: u.name, role: u.role, password },
     });
     console.log(`Seeded ${u.role.toLowerCase()}: ${u.email} / ${u.password}`);
   }
@@ -29,6 +31,12 @@ async function main(): Promise<void> {
 
 /** Generate enough customers to exercise pagination (default limit 20). Idempotent. */
 async function seedCustomers(count: number): Promise<void> {
+  // Vary the creator across the users who can create (ADMIN + STAFF).
+  const creators = await prisma.user.findMany({
+    where: { email: { in: ['admin@mini-erp.local', 'staff@mini-erp.local'] } },
+    select: { id: true },
+  });
+  const creatorId = (i: number): string | undefined => creators[i % creators.length]?.id;
   const prefixes = ['PT', 'CV', 'UD', 'PT', 'CV'];
   const words = [
     'Maju',
@@ -56,7 +64,7 @@ async function seedCustomers(count: number): Promise<void> {
     await prisma.customer.upsert({
       // email isn't unique in the schema, so key idempotency on a deterministic id
       where: { id },
-      update: {},
+      update: { createdById: creatorId(i) }, // backfill audit on re-seed
       create: {
         id,
         name,
@@ -64,6 +72,7 @@ async function seedCustomers(count: number): Promise<void> {
         phone: `021-555-${String(1000 + i)}`,
         npwp: i % 3 === 0 ? null : `0${i}.234.567.8-90${i % 10}.000`,
         address: `Jl. Contoh No. ${i}, Jakarta`,
+        createdById: creatorId(i),
       },
     });
   }
@@ -76,8 +85,12 @@ async function seedCustomers(count: number): Promise<void> {
  * Idempotent: keyed on a deterministic id, nested rows created only on insert.
  */
 async function seedInvoices(count: number): Promise<void> {
-  const admin = await prisma.user.findUnique({ where: { email: 'admin@mini-erp.local' } });
-  if (!admin) throw new Error('admin user must be seeded before invoices');
+  const creators = await prisma.user.findMany({
+    where: { email: { in: ['admin@mini-erp.local', 'staff@mini-erp.local'] } },
+    select: { id: true },
+  });
+  if (creators.length === 0) throw new Error('users must be seeded before invoices');
+  const creatorId = (i: number): string => creators[i % creators.length].id;
 
   const statuses: InvoiceStatus[] = ['DRAFT', 'SENT', 'PAID', 'OVERDUE', 'CANCELLED'];
   const catalog = [
@@ -104,12 +117,13 @@ async function seedInvoices(count: number): Promise<void> {
 
     await prisma.invoice.upsert({
       where: { id },
-      update: {},
+      update: { createdById: creatorId(i) }, // backfill audit on re-seed
+
       create: {
         id,
         number: `INV-2026-${String(9000 + i)}`,
         customerId,
-        createdById: admin.id,
+        createdById: creatorId(i),
         status,
         issueDate,
         dueDate,
@@ -118,7 +132,7 @@ async function seedInvoices(count: number): Promise<void> {
         taxAmount: totals.taxAmount,
         total: totals.total,
         items: { create: totals.items },
-        statusLogs: { create: { toStatus: status, changedById: admin.id } },
+        statusLogs: { create: { toStatus: status, changedById: creatorId(i) } },
       },
     });
   }

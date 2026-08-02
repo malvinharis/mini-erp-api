@@ -32,7 +32,10 @@ model User {
   deletedAt DateTime?
 
   refreshTokens        RefreshToken[]
+  createdCustomers     Customer[]         @relation("CustomerCreatedBy")
+  updatedCustomers     Customer[]         @relation("CustomerUpdatedBy")
   createdInvoices      Invoice[]          @relation("InvoiceCreatedBy")
+  updatedInvoices      Invoice[]          @relation("InvoiceUpdatedBy")
   invoiceStatusChanges InvoiceStatusLog[] @relation("InvoiceStatusChangedBy")
 
   @@index([email])
@@ -42,21 +45,26 @@ model User {
 // Org-wide customer records (shared across staff). Soft delete keeps history
 // for the invoices that will reference them.
 model Customer {
-  id        String    @id @default(uuid())
-  name      String
-  email     String
-  phone     String?
-  npwp      String?
-  address   String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  id          String    @id @default(uuid())
+  name        String
+  email       String
+  phone       String?
+  npwp        String?
+  address     String?
+  createdById String?
+  updatedById String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
 
-  invoices Invoice[]
+  invoices  Invoice[]
+  createdBy User?     @relation("CustomerCreatedBy", fields: [createdById], references: [id])
+  updatedBy User?     @relation("CustomerUpdatedBy", fields: [updatedById], references: [id])
 
   @@index([name])
   @@index([email])
   @@index([createdAt])
+  @@index([createdById])
 }
 
 enum InvoiceStatus {
@@ -74,6 +82,7 @@ model Invoice {
   number      String        @unique
   customerId  String
   createdById String
+  updatedById String?
   status      InvoiceStatus @default(DRAFT)
   issueDate   DateTime
   dueDate     DateTime
@@ -86,6 +95,7 @@ model Invoice {
 
   customer   Customer           @relation(fields: [customerId], references: [id])
   createdBy  User               @relation("InvoiceCreatedBy", fields: [createdById], references: [id])
+  updatedBy  User?              @relation("InvoiceUpdatedBy", fields: [updatedById], references: [id])
   items      InvoiceItem[]
   statusLogs InvoiceStatusLog[]
 
