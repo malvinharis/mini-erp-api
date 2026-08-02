@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { CoreModule } from './core.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CustomersModule } from './modules/customers/customers.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { HealthModule } from './modules/health/health.module';
 import { InvoicesModule } from './modules/invoices/invoices.module';
 import { UsersModule } from './modules/users/users.module';
@@ -13,6 +14,14 @@ import { UsersModule } from './modules/users/users.module';
  * services; the modules are unchanged.
  */
 @Module({
-  imports: [CoreModule, AuthModule, UsersModule, CustomersModule, InvoicesModule, HealthModule],
+  imports: [
+    CoreModule,
+    AuthModule,
+    UsersModule,
+    CustomersModule,
+    InvoicesModule,
+    DashboardModule,
+    HealthModule,
+  ],
 })
 export class AppModule {}
