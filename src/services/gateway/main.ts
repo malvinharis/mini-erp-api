@@ -10,6 +10,7 @@ import { createProxyMiddleware } from 'http-proxy-middleware';
 const PORT = Number(process.env.GATEWAY_PORT ?? 4000);
 const AUTH_URL = process.env.AUTH_SERVICE_URL ?? 'http://localhost:4001';
 const USERS_URL = process.env.USERS_SERVICE_URL ?? 'http://localhost:4002';
+const CORE_URL = process.env.CORE_SERVICE_URL ?? 'http://localhost:4003';
 const ORIGINS = (process.env.CORS_ORIGINS ?? 'http://localhost:3000')
   .split(',')
   .map((o) => o.trim());
@@ -38,6 +39,9 @@ app.use((req, res, next) => {
 const routes: Array<{ prefix: string; target: string }> = [
   { prefix: '/api/auth', target: AUTH_URL },
   { prefix: '/api/users', target: USERS_URL },
+  { prefix: '/api/customers', target: CORE_URL },
+  { prefix: '/api/invoices', target: CORE_URL },
+  { prefix: '/api/dashboard', target: CORE_URL },
 ];
 
 for (const { prefix, target } of routes) {

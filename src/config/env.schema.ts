@@ -16,8 +16,10 @@ export const envSchema = z.object({
   GATEWAY_PORT: z.coerce.number().int().positive().default(4000),
   AUTH_SERVICE_PORT: z.coerce.number().int().positive().default(4001),
   USERS_SERVICE_PORT: z.coerce.number().int().positive().default(4002),
+  CORE_SERVICE_PORT: z.coerce.number().int().positive().default(4003),
   AUTH_SERVICE_URL: z.string().url().default('http://localhost:4001'),
   USERS_SERVICE_URL: z.string().url().default('http://localhost:4002'),
+  CORE_SERVICE_URL: z.string().url().default('http://localhost:4003'),
 });
 
 export type Env = z.infer<typeof envSchema>;

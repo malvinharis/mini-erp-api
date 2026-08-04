@@ -54,8 +54,10 @@ jobs:
             GATEWAY_PORT=4000
             AUTH_SERVICE_PORT=4001
             USERS_SERVICE_PORT=4002
+            CORE_SERVICE_PORT=4003
             AUTH_SERVICE_URL=http://auth:4001
             USERS_SERVICE_URL=http://users:4002
+            CORE_SERVICE_URL=http://core:4003
             ENVEOF
             chmod 600 .env
 
