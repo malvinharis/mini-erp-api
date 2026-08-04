@@ -1,9 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import * as argon2 from 'argon2';
-// biome-ignore lint/style/useImportType: NestJS DI needs a runtime import for emitDecoratorMetadata
 import { PrismaService } from '../../prisma/prisma.service';
 import type { AuthUser, LoginInput, TokenPair } from '../../shared';
-// biome-ignore lint/style/useImportType: NestJS DI needs a runtime import for emitDecoratorMetadata
 import { TokenService } from './token.service';
 
 @Injectable()

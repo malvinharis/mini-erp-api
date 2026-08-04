@@ -4,7 +4,6 @@ import {
   ForbiddenException,
   Injectable,
 } from '@nestjs/common';
-// biome-ignore lint/style/useImportType: NestJS DI needs a runtime import for emitDecoratorMetadata
 import { Reflector } from '@nestjs/core';
 import type { AuthUser, UserRole } from '../../shared';
 import { ROLES_KEY } from '../decorators/roles.decorator';

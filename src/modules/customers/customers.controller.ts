@@ -14,14 +14,10 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
-// biome-ignore lint/style/useImportType: NestJS DI needs a runtime import for emitDecoratorMetadata
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import type { AuthUser } from '../../shared';
-// biome-ignore lint/style/useImportType: NestJS DI needs a runtime import for emitDecoratorMetadata
 import { CustomersService } from './customers.service';
-// biome-ignore lint/style/useImportType: NestJS DI needs a runtime import for emitDecoratorMetadata
 import { CreateCustomerDto } from './dto/create-customer.dto';
-// biome-ignore lint/style/useImportType: NestJS DI needs a runtime import for emitDecoratorMetadata
 import { UpdateCustomerDto } from './dto/update-customer.dto';
 
 // Thin controller. Read is open to any authenticated user (incl. VIEWER);

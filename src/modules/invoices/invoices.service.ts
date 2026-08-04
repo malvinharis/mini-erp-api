@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { buildPageMeta, toPrismaPage } from '../../common/utils/pagination';
-// biome-ignore lint/style/useImportType: NestJS DI needs a runtime import for emitDecoratorMetadata
 import { PrismaService } from '../../prisma/prisma.service';
 import type {
   AuthUser,
@@ -74,7 +73,14 @@ export class InvoicesService {
             },
           }
         : {}),
-      ...(query.search ? { number: { contains: query.search, mode: 'insensitive' } } : {}),
+      ...(query.search
+        ? {
+            OR: [
+              { number: { contains: query.search, mode: 'insensitive' } },
+              { customer: { name: { contains: query.search, mode: 'insensitive' } } },
+            ],
+          }
+        : {}),
     };
     const { skip, take } = toPrismaPage(query);
 

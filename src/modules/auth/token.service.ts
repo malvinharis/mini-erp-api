@@ -1,12 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-// biome-ignore lint/style/useImportType: NestJS DI needs a runtime import for emitDecoratorMetadata
 import { ConfigService } from '@nestjs/config';
-// biome-ignore lint/style/useImportType: NestJS DI needs a runtime import for emitDecoratorMetadata
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import type { Env } from '../../config/env.schema';
-// biome-ignore lint/style/useImportType: NestJS DI needs a runtime import for emitDecoratorMetadata
 import { PrismaService } from '../../prisma/prisma.service';
 import type { AuthUser, TokenPair } from '../../shared';
 

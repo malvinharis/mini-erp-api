@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { buildPageMeta, toPrismaPage } from '../../common/utils/pagination';
-// biome-ignore lint/style/useImportType: NestJS DI needs a runtime import for emitDecoratorMetadata
 import { PrismaService } from '../../prisma/prisma.service';
 import type { CreateCustomerInput, PaginationQuery, UpdateCustomerInput } from '../../shared';
 

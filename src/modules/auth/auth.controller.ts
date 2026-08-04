@@ -8,7 +8,6 @@ import {
   Res,
   UnauthorizedException,
 } from '@nestjs/common';
-// biome-ignore lint/style/useImportType: NestJS DI needs a runtime import for emitDecoratorMetadata
 import { ConfigService } from '@nestjs/config';
 import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -17,11 +16,8 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import type { Env } from '../../config/env.schema';
 import type { AuthUser } from '../../shared';
-// biome-ignore lint/style/useImportType: NestJS DI needs a runtime import for emitDecoratorMetadata
 import { AuthService } from './auth.service';
-// biome-ignore lint/style/useImportType: NestJS DI needs a runtime import for emitDecoratorMetadata
 import { LoginDto } from './dto/login.dto';
-// biome-ignore lint/style/useImportType: NestJS DI needs a runtime import for emitDecoratorMetadata
 import { RefreshDto } from './dto/refresh.dto';
 
 const REFRESH_COOKIE = 'refreshToken';

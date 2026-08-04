@@ -49,6 +49,5 @@ app.get('/health', (_req, res) =>
 );
 
 app.listen(PORT, () => {
-  // biome-ignore lint/suspicious/noConsole: gateway startup log, no Nest logger here
   console.log(`mini-erp gateway listening on :${PORT} -> auth ${AUTH_URL}, users ${USERS_URL}`);
 });

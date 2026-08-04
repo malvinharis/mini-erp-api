@@ -3,15 +3,10 @@ import { ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import type { AuthUser } from '../../shared';
-// biome-ignore lint/style/useImportType: NestJS DI needs a runtime import for emitDecoratorMetadata
 import { ChangeInvoiceStatusDto } from './dto/change-invoice-status.dto';
-// biome-ignore lint/style/useImportType: NestJS DI needs a runtime import for emitDecoratorMetadata
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
-// biome-ignore lint/style/useImportType: NestJS DI needs a runtime import for emitDecoratorMetadata
 import { InvoiceQueryDto } from './dto/invoice-query.dto';
-// biome-ignore lint/style/useImportType: NestJS DI needs a runtime import for emitDecoratorMetadata
 import { UpdateInvoiceDto } from './dto/update-invoice.dto';
-// biome-ignore lint/style/useImportType: NestJS DI needs a runtime import for emitDecoratorMetadata
 import { InvoicesService } from './invoices.service';
 
 // Thin controller. Read is open to any authenticated user (incl. VIEWER);
