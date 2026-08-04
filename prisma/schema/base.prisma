@@ -1,0 +1,20 @@
+// Multi-file Prisma schema (prisma/schema/). Prisma merges every *.prisma file
+// in this folder into one datamodel. Models are split per module:
+//   users.prisma     — User, RefreshToken, UserRole   (auth + users)
+//   customers.prisma — Customer
+//   invoices.prisma  — Invoice, InvoiceItem, InvoiceStatusLog, InvoiceStatus
+// Conventions: uuid PK, createdAt/updatedAt on every model, Decimal(14,2) for
+// money, soft delete via deletedAt where history matters, index FKs + filter + sort.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  // pooled connection (PgBouncer, transaction mode) — used at runtime
+  url       = env("DATABASE_URL")
+  // direct connection — used only by `prisma migrate deploy`, which needs an
+  // advisory lock that a transaction-mode pooler can't hold
+  directUrl = env("DIRECT_URL")
+}

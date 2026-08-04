@@ -1,0 +1,41 @@
+enum UserRole {
+  ADMIN
+  STAFF
+  VIEWER
+}
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  name      String
+  password  String
+  role      UserRole  @default(STAFF)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  refreshTokens        RefreshToken[]
+  createdCustomers     Customer[]         @relation("CustomerCreatedBy")
+  updatedCustomers     Customer[]         @relation("CustomerUpdatedBy")
+  createdInvoices      Invoice[]          @relation("InvoiceCreatedBy")
+  updatedInvoices      Invoice[]          @relation("InvoiceUpdatedBy")
+  invoiceStatusChanges InvoiceStatusLog[] @relation("InvoiceStatusChangedBy")
+
+  @@index([email])
+  @@index([role, createdAt])
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String
+  family    String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([family])
+}

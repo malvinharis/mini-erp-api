@@ -29,6 +29,7 @@
     "release": "commit-and-tag-version"
   },
   "prisma": {
+    "schema": "prisma/schema",
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {

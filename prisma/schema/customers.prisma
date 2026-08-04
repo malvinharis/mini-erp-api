@@ -1,0 +1,24 @@
+// Org-wide customer records (shared across staff). Soft delete keeps history
+// for the invoices that reference them.
+model Customer {
+  id          String    @id @default(uuid())
+  name        String
+  email       String
+  phone       String?
+  npwp        String?
+  address     String?
+  createdById String?
+  updatedById String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  invoices  Invoice[]
+  createdBy User?     @relation("CustomerCreatedBy", fields: [createdById], references: [id])
+  updatedBy User?     @relation("CustomerUpdatedBy", fields: [updatedById], references: [id])
+
+  @@index([name])
+  @@index([email])
+  @@index([createdAt])
+  @@index([createdById])
+}

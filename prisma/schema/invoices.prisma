@@ -1,0 +1,64 @@
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+// Invoice header. Derived money columns (subtotal/taxAmount/total) are stored,
+// computed server-side from the items — never trusted from the client.
+model Invoice {
+  id          String        @id @default(uuid())
+  number      String        @unique
+  customerId  String
+  createdById String
+  updatedById String?
+  status      InvoiceStatus @default(DRAFT)
+  issueDate   DateTime
+  dueDate     DateTime
+  subtotal    Decimal       @default(0) @db.Decimal(14, 2)
+  taxRate     Decimal       @default(0) @db.Decimal(5, 2)
+  taxAmount   Decimal       @default(0) @db.Decimal(14, 2)
+  total       Decimal       @default(0) @db.Decimal(14, 2)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  customer   Customer           @relation(fields: [customerId], references: [id])
+  createdBy  User               @relation("InvoiceCreatedBy", fields: [createdById], references: [id])
+  updatedBy  User?              @relation("InvoiceUpdatedBy", fields: [updatedById], references: [id])
+  items      InvoiceItem[]
+  statusLogs InvoiceStatusLog[]
+
+  @@index([customerId])
+  @@index([status, issueDate])
+  @@index([issueDate])
+}
+
+model InvoiceItem {
+  id          String  @id @default(uuid())
+  invoiceId   String
+  description String
+  quantity    Int
+  unitPrice   Decimal @db.Decimal(14, 2)
+  amount      Decimal @db.Decimal(14, 2)
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+}
+
+// Audit timeline — who changed the status, when, from and to.
+model InvoiceStatusLog {
+  id          String         @id @default(uuid())
+  invoiceId   String
+  fromStatus  InvoiceStatus?
+  toStatus    InvoiceStatus
+  changedById String
+  createdAt   DateTime       @default(now())
+
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  changedBy User    @relation("InvoiceStatusChangedBy", fields: [changedById], references: [id])
+
+  @@index([invoiceId])
+}
