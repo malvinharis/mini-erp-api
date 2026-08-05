@@ -72,7 +72,10 @@ jobs:
               gateway node_modules/.bin/prisma migrate deploy
 
             # 5. recreate all three services (gateway waits for auth/users health)
-            docker compose -f docker-compose.prod.yml up -d
+            #    --remove-orphans clears stale containers from old compose
+            #    project/service names still holding onto ports
+            docker rm -f mini-erp-api 2>/dev/null || true
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
 
             # 6. wait for health, then drop dangling old images
             sleep 15
