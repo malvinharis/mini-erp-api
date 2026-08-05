@@ -48,6 +48,14 @@ for (const { prefix, target } of routes) {
   app.use(prefix, createProxyMiddleware({ target, changeOrigin: true, xfwd: true }));
 }
 
+// Each service mounts its own Swagger at /docs — only auth's doc is reachable
+// through the gateway (login/refresh contract). users/core docs still require
+// exec'ing into their container.
+app.use(
+  ['/docs', '/docs-json'],
+  createProxyMiddleware({ target: AUTH_URL, changeOrigin: true, xfwd: true }),
+);
+
 app.get('/health', (_req, res) =>
   res.json({ status: 'ok', services: routes.map((r) => r.prefix) }),
 );
