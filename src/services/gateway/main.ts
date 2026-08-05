@@ -44,17 +44,36 @@ const routes: Array<{ prefix: string; target: string }> = [
   { prefix: '/api/dashboard', target: CORE_URL },
 ];
 
+// Express strips the mount prefix from req.url before the middleware sees it,
+// so `app.use('/api/auth', proxy)` would forward `/api/auth/login` as `/login`
+// upstream — a 404 against each service's own `/api/...` routes. pathRewrite
+// puts the prefix back on so the service receives the original path.
 for (const { prefix, target } of routes) {
-  app.use(prefix, createProxyMiddleware({ target, changeOrigin: true, xfwd: true }));
+  app.use(
+    prefix,
+    createProxyMiddleware({
+      target,
+      changeOrigin: true,
+      xfwd: true,
+      pathRewrite: (path) => prefix + path,
+    }),
+  );
 }
 
 // Each service mounts its own Swagger at /docs — only auth's doc is reachable
 // through the gateway (login/refresh contract). users/core docs still require
 // exec'ing into their container.
-app.use(
-  ['/docs', '/docs-json'],
-  createProxyMiddleware({ target: AUTH_URL, changeOrigin: true, xfwd: true }),
-);
+for (const docsPrefix of ['/docs', '/docs-json']) {
+  app.use(
+    docsPrefix,
+    createProxyMiddleware({
+      target: AUTH_URL,
+      changeOrigin: true,
+      xfwd: true,
+      pathRewrite: (path) => docsPrefix + path,
+    }),
+  );
+}
 
 app.get('/health', (_req, res) =>
   res.json({ status: 'ok', services: routes.map((r) => r.prefix) }),
